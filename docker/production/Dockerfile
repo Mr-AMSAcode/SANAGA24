@@ -26,6 +26,22 @@ FROM node:22-alpine AS frontend
 
 WORKDIR /app
 
+# Vite bakes import.meta.env.VITE_* values into the compiled JS at BUILD
+# time — they can't come from the runtime .env bind-mount (that file
+# doesn't exist yet during `docker build`). Without these, resources/js/echo.js
+# instantiates Pusher/Reverb with an empty app key and throws immediately
+# ("You must pass your app key"), on every page, for every visitor.
+ARG VITE_APP_NAME=Sanaga24
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
+ENV VITE_APP_NAME=$VITE_APP_NAME \
+    VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY \
+    VITE_REVERB_HOST=$VITE_REVERB_HOST \
+    VITE_REVERB_PORT=$VITE_REVERB_PORT \
+    VITE_REVERB_SCHEME=$VITE_REVERB_SCHEME
+
 COPY package.json package-lock.json ./
 RUN npm ci
 

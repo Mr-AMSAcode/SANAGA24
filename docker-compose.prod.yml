@@ -7,6 +7,14 @@ x-app-image: &app-image
     args:
       APP_UID: '1000'
       APP_GID: '1000'
+      # Vite needs these at build time (see docker/production/Dockerfile)
+      # — Compose reads them from the .env file in this same directory for
+      # this substitution, same file as env_file below.
+      VITE_APP_NAME: ${APP_NAME:-Sanaga24}
+      VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+      VITE_REVERB_HOST: ${REVERB_HOST}
+      VITE_REVERB_PORT: ${REVERB_PORT}
+      VITE_REVERB_SCHEME: ${REVERB_SCHEME}
   image: sanaga24-app:latest
   env_file: .env
   # env_file only injects environment *variables* — it does not put an
