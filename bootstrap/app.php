@@ -13,6 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // In production the app only ever receives requests from the VPS's
+        // own host-level Nginx (SSL termination happens there — see
+        // DEPLOIEMENT.md step 8), never directly from the public internet.
+        // Without this, Laravel has no way to know the original request
+        // was HTTPS and generates http:// asset/route URLs, which the
+        // browser then blocks as mixed content on an https:// page (silent
+        // CSS/JS failure — the page loads, nothing looks styled).
+        $middleware->trustProxies(at: '*');
+
         $middleware->statefulApi();
         $middleware->throttleApi();
         $middleware->web(append: [

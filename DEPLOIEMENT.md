@@ -19,7 +19,7 @@ Dernière mise à jour : 2026-08-07.
   | A    | `@` (ou vide)    | `<IP_DE_TON_VPS>`   |
   | A    | `www`            | `<IP_DE_TON_VPS>`   |
 
-  La propagation DNS peut prendre de quelques minutes à quelques heures. Tu peux vérifier avec `dig ton-domaine.com` ou sur [dnschecker.org](https://dnschecker.org).
+  La propagation DNS peut prendre de quelques minutes à quelques heures. Tu peux vérifier avec `dig TON-VRAI-DOMAINE.com` ou sur [dnschecker.org](https://dnschecker.org).
 
 Tout ce qui suit se fait **en SSH sur le VPS**, pas sur ton PC.
 
@@ -150,22 +150,29 @@ curl -I http://127.0.0.1:8000
 
 ## 8. Configurer Nginx (le reverse proxy public) et le certificat SSL
 
-Copie le modèle fourni et remplace `<CHANGE_ME_DOMAIN>` par ton vrai domaine :
+⚠️ Dans les commandes ci-dessous, **`TON-VRAI-DOMAINE.com` est à remplacer par toi, dans la commande elle-même**, avant de la coller dans le terminal (ex. `sanaga24.com`). `<CHANGE_ME_DOMAIN>`, lui, ne se tape jamais — c'est un texte qui se trouve dans le fichier modèle copié à l'étape 1, et la commande `sed` de l'étape 2 le remplace automatiquement pour toi.
 
-```bash
-cp docker/production/host-nginx.conf.example /etc/nginx/sites-available/sanaga24
-sed -i 's/<CHANGE_ME_DOMAIN>/ton-domaine.com/g' /etc/nginx/sites-available/sanaga24
-ln -s /etc/nginx/sites-available/sanaga24 /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
-```
+1. Copier le modèle fourni :
+   ```bash
+   cp docker/production/host-nginx.conf.example /etc/nginx/sites-available/sanaga24
+   ```
+2. Remplacer `TON-VRAI-DOMAINE.com` ci-dessous par ton vrai domaine, puis lancer la commande modifiée :
+   ```bash
+   sed -i 's/<CHANGE_ME_DOMAIN>/TON-VRAI-DOMAINE.com/g' /etc/nginx/sites-available/sanaga24
+   ```
+3. Activer le site et vérifier la configuration :
+   ```bash
+   ln -s /etc/nginx/sites-available/sanaga24 /etc/nginx/sites-enabled/
+   rm -f /etc/nginx/sites-enabled/default
+   nginx -t && systemctl reload nginx
+   ```
 
 `nginx -t` doit afficher `syntax is ok` / `test is successful`. Si une erreur apparaît, relis le message — c'est presque toujours une faute de frappe dans le domaine.
 
-Maintenant, le certificat SSL — Certbot modifie automatiquement le fichier Nginx pour ajouter le HTTPS et la redirection HTTP→HTTPS :
+Maintenant, le certificat SSL — Certbot modifie automatiquement le fichier Nginx pour ajouter le HTTPS et la redirection HTTP→HTTPS. Là encore, remplace `TON-VRAI-DOMAINE.com` par ton vrai domaine avant de lancer :
 
 ```bash
-certbot --nginx -d ton-domaine.com -d www.ton-domaine.com
+certbot --nginx -d TON-VRAI-DOMAINE.com -d www.TON-VRAI-DOMAINE.com
 ```
 
 Certbot demande une adresse email (pour les alertes d'expiration) et propose d'activer la redirection HTTPS — accepte. Le renouvellement automatique est déjà configuré par le paquet `certbot` (vérifiable avec `systemctl list-timers | grep certbot`), rien à faire de plus.
@@ -174,7 +181,7 @@ Certbot demande une adresse email (pour les alertes d'expiration) et propose d'a
 
 ## 9. Vérifier que le site est en ligne
 
-Ouvre `https://ton-domaine.com` dans un navigateur. Le cadenas HTTPS doit apparaître.
+Ouvre `https://TON-VRAI-DOMAINE.com` dans un navigateur. Le cadenas HTTPS doit apparaître.
 
 Si une erreur s'affiche, va directement à la section **Dépannage** plus bas.
 
@@ -193,7 +200,7 @@ Puis dans la console qui s'ouvre :
 ```php
 $user = \App\Models\User::create([
     'name' => 'Ton Nom',
-    'email' => 'toi@ton-domaine.com',
+    'email' => 'toi@TON-VRAI-DOMAINE.com',
     'password' => \Illuminate\Support\Facades\Hash::make('UN_MOT_DE_PASSE_FORT'),
     'email_verified_at' => now(),
 ]);
@@ -201,7 +208,7 @@ $user->assignRole('admin');
 exit
 ```
 
-Connecte-toi ensuite sur `https://ton-domaine.com/login`.
+Connecte-toi ensuite sur `https://TON-VRAI-DOMAINE.com/login`.
 
 ---
 
