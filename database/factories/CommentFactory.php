@@ -34,4 +34,9 @@ class CommentFactory extends Factory
             'parent_id' => $parent->id,
         ]);
     }
+
+    public function rejected(): static
+    {
+        return $this->state(['status' => \App\Enums\CommentStatus::Rejected]);
+    }
 }

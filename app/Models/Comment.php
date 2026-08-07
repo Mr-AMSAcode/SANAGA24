@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CommentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,31 @@ class Comment extends Model
         'post_id',
         'parent_id',
         'content',
+        'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => CommentStatus::class,
+        ];
+    }
+
+    /**
+     * Keep the denormalized PostStats.comment_count in sync.
+     * SoftDeletes fires the "deleted" event on soft-delete too, which is
+     * what we want — a trashed comment shouldn't count.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $comment): void {
+            PostStats::where('post_id', $comment->post_id)->increment('comment_count');
+        });
+
+        static::deleted(function (self $comment): void {
+            PostStats::where('post_id', $comment->post_id)->decrement('comment_count');
+        });
+    }
 
     // ─────────────────────────────────────────────────
     // Relationships
@@ -85,6 +110,16 @@ class Comment extends Model
         $query->whereNotNull('parent_id');
     }
 
+    /**
+     * Only comments an admin hasn't rejected — what the public thread
+     * shows. Not baked into the base relations so the admin moderation
+     * queue can still see everything.
+     */
+    public function scopeApproved(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('status', CommentStatus::Approved);
+    }
+
     // ─────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────
@@ -102,5 +137,10 @@ class Comment extends Model
     public function isOwnedBy(User $user): bool
     {
         return $this->user_id === $user->id;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === CommentStatus::Approved;
     }
 }

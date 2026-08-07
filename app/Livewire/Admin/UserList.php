@@ -148,7 +148,7 @@ class UserList extends Component
     #[Computed]
     public function roleCounts(): array
     {
-        return User::selectRaw('count(*) as total')
+        return User::selectRaw('roles.name, count(*) as total')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->groupBy('roles.name')

@@ -4,6 +4,7 @@ namespace App\Livewire\Pages;
 
 use App\Enums\PostSection;
 use App\Models\Post;
+use App\Models\Tag;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -18,6 +19,10 @@ class PostIndex extends Component
     /** Section being browsed — populated from the route parameter in mount() */
     #[Url(as: 'section', except: '')]
     public string $section = '';
+
+    /** Tag slug being browsed — populated from the route parameter in mount() */
+    #[Url(as: 'tag', except: '')]
+    public string $tag = '';
 
     #[Url(as: 'q', except: '')]
     public string $search = '';
@@ -37,10 +42,11 @@ class PostIndex extends Component
 
     /**
      * Called when the component is mounted via route:
-     *   Route::livewire('/section/{section}', PostIndex::class);
-     * The section parameter is validated against the enum.
+     *   /section/{section}  or  /tags/{tag}
+     * The section parameter is validated against the enum; the tag
+     * parameter is validated against the tags table.
      */
-    public function mount(string $section = ''): void
+    public function mount(string $section = '', string $tag = ''): void
     {
         if ($section !== '') {
             // Validate the section is a valid enum value
@@ -48,11 +54,18 @@ class PostIndex extends Component
             abort_unless(in_array($section, $valid), 404);
             $this->section = $section;
         }
+
+        if ($tag !== '') {
+            abort_unless(Tag::where('slug', $tag)->exists(), 404);
+            $this->tag = $tag;
+        }
     }
 
     #[Computed]
     public function posts()
     {
+        $hasSearch = filled($this->search);
+
         $query = Post::query()
             ->published()
             ->with([
@@ -61,7 +74,8 @@ class PostIndex extends Component
                 'stats:post_id,view_count,like_count,comment_count',
             ])
             ->when($this->section, fn ($q) => $q->inSection($this->section))
-            ->when($this->search, fn ($q) => $q->where('title', 'ilike', "%{$this->search}%"));
+            ->when($this->tag, fn ($q) => $q->withTagSlug($this->tag))
+            ->when($hasSearch, fn ($q) => $q->search($this->search));
 
         return match ($this->sort) {
             'popular' => $query->join('post_stats', 'posts.id', '=', 'post_stats.post_id')
@@ -72,27 +86,39 @@ class PostIndex extends Component
                 ->orderByDesc('post_stats.comment_count')
                 ->select('posts.*')
                 ->paginate(15),
-            default => $query->latest()->paginate(15),
+            default => $hasSearch
+                ? $query->orderByRelevance($this->search)->paginate(15)
+                : $query->latest()->paginate(15),
         };
     }
 
     #[Computed]
     public function sections(): array
     {
-        return PostSection::cases();
+        return PostSection::visible();
     }
 
     #[Computed]
     public function currentSectionLabel(): string
     {
+        if ($this->tag !== '') {
+            return '#'.($this->currentTag?->name ?? $this->tag);
+        }
+
         if ($this->section === '') {
-            return 'All Sections';
+            return __('All Sections');
         }
 
         $match = collect(PostSection::cases())
             ->firstWhere('value', $this->section);
 
-        return $match?->label() ?? ucfirst($this->section);
+        return $match ? __($match->label()) : ucfirst($this->section);
+    }
+
+    #[Computed]
+    public function currentTag(): ?Tag
+    {
+        return $this->tag !== '' ? Tag::where('slug', $this->tag)->first() : null;
     }
 
     public function render(): \Illuminate\View\View

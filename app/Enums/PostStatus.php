@@ -5,6 +5,7 @@ namespace App\Enums;
 enum PostStatus: string
 {
     case Draft = 'draft';
+    case Scheduled = 'scheduled';
     case Published = 'published';
     case Archived = 'archived';
 
@@ -15,6 +16,7 @@ enum PostStatus: string
     {
         return match ($this) {
             self::Draft => 'Draft',
+            self::Scheduled => 'Scheduled',
             self::Published => 'Published',
             self::Archived => 'Archived',
         };
@@ -27,6 +29,7 @@ enum PostStatus: string
     {
         return match ($this) {
             self::Draft => 'badge-warning',
+            self::Scheduled => 'badge-info',
             self::Published => 'badge-success',
             self::Archived => 'badge-neutral',
         };
@@ -34,12 +37,17 @@ enum PostStatus: string
 
     /**
      * Allowed transitions from this state.
-     * Enforced in PostService::changeStatus() before persisting.
+     * Enforced in PostEdit before persisting.
+     *
+     * Scheduled -> Scheduled is intentional: it's how "reschedule" works
+     * (update active_period_start while remaining Scheduled), not a
+     * status change.
      */
     public function canTransitionTo(self $new): bool
     {
         return match ($this) {
-            self::Draft => in_array($new, [self::Published]),
+            self::Draft => in_array($new, [self::Published, self::Scheduled]),
+            self::Scheduled => in_array($new, [self::Published, self::Draft, self::Scheduled]),
             self::Published => in_array($new, [self::Archived, self::Draft]),
             self::Archived => in_array($new, [self::Published]),
         };

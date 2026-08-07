@@ -7,6 +7,14 @@
 
         <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
             @csrf
+
+            {{-- Honeypot: invisible to humans, bots that auto-fill every field trip it --}}
+            <div class="absolute -left-[9999px]" aria-hidden="true">
+                <label for="website">Leave this field blank</label>
+                <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+            </div>
+            <input type="hidden" name="form_rendered_at" value="{{ encrypt(now()->timestamp) }}">
+
             <!-- Name -->
             <flux:input
                 name="name"

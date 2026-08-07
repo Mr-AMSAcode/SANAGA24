@@ -4,9 +4,9 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-2xl font-black text-stone-900 tracking-tight">
-                    Welcome back, {{ auth()->user()->name }}
+                    {{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}
                 </h1>
-                <p class="text-stone-500 text-sm mt-0.5">Here's how your content is performing</p>
+                <p class="text-stone-500 text-sm mt-0.5">{{ __("Here's how your content is performing") }}</p>
             </div>
             <a wire:navigate href="{{ route('editor.posts.create') }}"
                class="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500
@@ -14,18 +14,19 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                 </svg>
-                New Post
+                {{ __('New Post') }}
             </a>
         </div>
 
         {{-- Stats cards --}}
         @php $s = $this->stats; @endphp
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
             @foreach ([
-                ['label' => 'Published',  'value' => $s['published'],      'color' => 'text-green-600',  'bg' => 'bg-green-50'],
-                ['label' => 'Drafts',     'value' => $s['drafts'],         'color' => 'text-stone-700',  'bg' => 'bg-white'],
-                ['label' => 'Total Views','value' => number_format($s['total_views']),  'color' => 'text-amber-600',  'bg' => 'bg-amber-50'],
-                ['label' => 'Total Likes','value' => number_format($s['total_likes']),  'color' => 'text-rose-600',   'bg' => 'bg-rose-50'],
+                ['label' => __('Published'),  'value' => $s['published'],      'color' => 'text-green-600',  'bg' => 'bg-green-50'],
+                ['label' => __('Scheduled'),  'value' => $s['scheduled'],      'color' => 'text-blue-600',   'bg' => 'bg-blue-50'],
+                ['label' => __('Drafts'),     'value' => $s['drafts'],         'color' => 'text-stone-700',  'bg' => 'bg-white'],
+                ['label' => __('Total Views'),'value' => number_format($s['total_views']),  'color' => 'text-amber-600',  'bg' => 'bg-amber-50'],
+                ['label' => __('Total Likes'),'value' => number_format($s['total_likes']),  'color' => 'text-rose-600',   'bg' => 'bg-rose-50'],
             ] as $stat)
                 <div class="rounded-xl border border-stone-100 {{ $stat['bg'] }} p-5 shadow-sm">
                     <p class="text-xs text-stone-500 font-semibold uppercase tracking-wider mb-1">{{ $stat['label'] }}</p>
@@ -39,8 +40,8 @@
             {{-- Top performing posts --}}
             <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-stone-100">
-                    <h2 class="font-black text-stone-900">Top Posts</h2>
-                    <p class="text-xs text-stone-400 mt-0.5">By view count</p>
+                    <h2 class="font-black text-stone-900">{{ __('Top Posts') }}</h2>
+                    <p class="text-xs text-stone-400 mt-0.5">{{ __('By view count') }}</p>
                 </div>
                 <ul class="divide-y divide-stone-50">
                     @forelse ($this->topPosts as $i => $post)
@@ -55,14 +56,14 @@
                                     {{ $post->title }}
                                 </a>
                                 <p class="text-xs text-stone-400 mt-0.5">
-                                    {{ number_format($post->stats?->view_count ?? 0) }} views ·
-                                    {{ $post->stats?->like_count ?? 0 }} likes
+                                    {{ trans_choice(':count view|:count views', $post->stats?->view_count ?? 0, ['count' => number_format($post->stats?->view_count ?? 0)]) }} ·
+                                    {{ trans_choice(':count like|:count likes', $post->stats?->like_count ?? 0, ['count' => $post->stats?->like_count ?? 0]) }}
                                 </p>
                             </div>
                         </li>
                     @empty
                         <li class="px-6 py-8 text-center text-stone-400 text-sm">
-                            No published posts yet.
+                            {{ __('No published posts yet.') }}
                         </li>
                     @endforelse
                 </ul>
@@ -72,12 +73,12 @@
             <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                     <div>
-                        <h2 class="font-black text-stone-900">Recent Activity</h2>
-                        <p class="text-xs text-stone-400 mt-0.5">Your latest posts</p>
+                        <h2 class="font-black text-stone-900">{{ __('Recent Activity') }}</h2>
+                        <p class="text-xs text-stone-400 mt-0.5">{{ __('Your latest posts') }}</p>
                     </div>
                     <a wire:navigate href="{{ route('editor.posts') }}"
                        class="text-xs text-amber-600 hover:underline font-semibold">
-                        Manage all →
+                        {{ __('Manage all →') }}
                     </a>
                 </div>
                 <ul class="divide-y divide-stone-50">
@@ -96,15 +97,15 @@
                                     {{ $post->title }}
                                 </a>
                                 <p class="text-xs text-stone-400">
-                                    {{ ucfirst($post->status->value) }} · {{ $post->created_at->diffForHumans() }}
+                                    {{ __($post->status->label()) }} · {{ $post->created_at->diffForHumans() }}
                                 </p>
                             </div>
                         </li>
                     @empty
                         <li class="px-6 py-8 text-center text-stone-400 text-sm">
-                            You haven't written anything yet.
+                            {{ __("You haven't written anything yet.") }}
                             <a wire:navigate href="{{ route('editor.posts.create') }}"
-                               class="text-amber-600 hover:underline">Start writing →</a>
+                               class="text-amber-600 hover:underline">{{ __('Start writing →') }}</a>
                         </li>
                     @endforelse
                 </ul>

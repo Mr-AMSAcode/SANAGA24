@@ -19,8 +19,8 @@ class Home extends Component
 
     public function mount(): void
     {
-        // Initialize limits for all sections
-        foreach (PostSection::cases() as $section) {
+        // Initialize limits for every section that can actually get a block
+        foreach (PostSection::visible() as $section) {
             $this->sectionLimits[$section->value] = 4;
         }
     }
@@ -88,15 +88,11 @@ class Home extends Component
      */
     private function layoutForSection(PostSection $section): string
     {
-        return match ($section->value) {
-            'politics' => 'four-col',
-            'crime' => 'list',
-            'sports' => 'hero-mini',
-            'business' => 'three-col',
-            'education' => 'hero-mini',
-            'culture' => 'three-col',
-            'health' => 'list',
-            'technology' => 'three-col',
+        return match ($section) {
+            PostSection::Politics => 'four-col',
+            PostSection::Sports => 'hero-mini',
+            PostSection::Opinion => 'list',
+            PostSection::Culture, PostSection::Science, PostSection::World => 'three-col',
             default => 'three-col',
         };
     }
@@ -106,7 +102,10 @@ class Home extends Component
     {
         $blocks = [];
 
-        foreach (PostSection::cases() as $section) {
+        // Only the sections actually reachable from the nav menu — a block
+        // for a section nobody can click through to from anywhere would be
+        // a dead end.
+        foreach (PostSection::visible() as $section) {
             $limit = $this->sectionLimits[$section->value] ?? 4;
 
             $posts = Post::query()

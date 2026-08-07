@@ -1,7 +1,7 @@
 <div class="mt-12" id="comments">
 
     <h2 class="text-xl font-black text-stone-900 mb-6 flex items-center gap-2">
-        Comments
+        {{ __('Comments') }}
         <span class="text-sm font-normal text-stone-400 bg-stone-100 px-2.5 py-0.5 rounded-full">
             {{ $this->comments->total() }}
         </span>
@@ -13,12 +13,12 @@
     @auth
         <div class="mb-8 bg-white rounded-xl border border-stone-200 p-5 shadow-sm">
             <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                Leave a comment
+                {{ __('Leave a comment') }}
             </label>
             <textarea
                 wire:model.live="newComment"
                 rows="3"
-                placeholder="Share your thoughts…"
+                placeholder="{{ __('Share your thoughts…') }}"
                 class="w-full text-sm text-stone-800 border border-stone-200 rounded-lg p-3
                        focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
             ></textarea>
@@ -31,15 +31,15 @@
                     wire:loading.attr="disabled"
                     class="px-5 py-2 text-sm font-bold text-stone-900 bg-amber-400
                            hover:bg-amber-500 rounded-lg transition-colors">
-                    <span wire:loading.remove wire:target="postComment">Post Comment</span>
-                    <span wire:loading wire:target="postComment">Posting…</span>
+                    <span wire:loading.remove wire:target="postComment">{{ __('Post Comment') }}</span>
+                    <span wire:loading wire:target="postComment">{{ __('Posting…') }}</span>
                 </button>
             </div>
         </div>
     @else
         <div class="mb-8 bg-stone-50 rounded-xl border border-stone-200 p-5 text-sm text-stone-500 text-center">
-            <a wire:navigate href="{{ route('login') }}" class="text-amber-600 font-semibold hover:underline">Sign in</a>
-            to join the conversation.
+            <a wire:navigate href="{{ route('login') }}" class="text-amber-600 font-semibold hover:underline">{{ __('Sign in') }}</a>
+            {{ __('to join the conversation.') }}
         </div>
     @endauth
 
@@ -69,7 +69,7 @@
                             </div>
 
                             {{-- Body --}}
-                            <p class="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">{{ $comment->body }}</p>
+                            <p class="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">{{ $comment->content }}</p>
 
                             {{-- Actions row --}}
                             <div class="flex items-center gap-4 mt-3">
@@ -81,7 +81,7 @@
                                 @auth
                                     <button wire:click="openReply({{ $comment->id }})"
                                             class="text-xs text-stone-400 hover:text-amber-600 font-medium transition-colors">
-                                        Reply
+                                        {{ __('Reply') }}
                                     </button>
                                 @endauth
 
@@ -89,9 +89,8 @@
                                 @if ($comment->replies_count > 0)
                                     <button wire:click="toggleReplies({{ $comment->id }})"
                                             class="text-xs text-stone-400 hover:text-stone-700 font-medium transition-colors">
-                                        {{ in_array($comment->id, $expandedReplies) ? 'Hide' : 'Show' }}
-                                        {{ $comment->replies_count }}
-                                        {{ Str::plural('reply', $comment->replies_count) }}
+                                        {{ in_array($comment->id, $expandedReplies) ? __('Hide') : __('Show') }}
+                                        {{ trans_choice(':count reply|:count replies', $comment->replies_count, ['count' => $comment->replies_count]) }}
                                     </button>
                                 @endif
 
@@ -99,7 +98,7 @@
                                 @if (auth()->id() === $comment->user_id || auth()->user()?->can('comment.delete.any'))
                                     <button wire:click="confirmDelete({{ $comment->id }})"
                                             class="text-xs text-red-400 hover:text-red-600 font-medium transition-colors ml-auto">
-                                        Delete
+                                        {{ __('Delete') }}
                                     </button>
                                 @endif
 
@@ -113,7 +112,7 @@
                             <textarea
                                 wire:model.live="replyBody"
                                 rows="2"
-                                placeholder="Write a reply…"
+                                placeholder="{{ __('Write a reply…') }}"
                                 class="w-full text-sm text-stone-800 border border-stone-200 rounded-lg p-3
                                        focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
                             ></textarea>
@@ -124,13 +123,13 @@
                                 <button wire:click="cancelReply"
                                         class="px-3 py-1.5 text-xs font-semibold text-stone-500
                                                hover:text-stone-700 rounded-lg transition-colors">
-                                    Cancel
+                                    {{ __('Cancel') }}
                                 </button>
                                 <button wire:click="postReply"
                                         wire:loading.attr="disabled"
                                         class="px-4 py-1.5 text-xs font-bold text-stone-900
                                                bg-amber-400 hover:bg-amber-500 rounded-lg transition-colors">
-                                    Reply
+                                    {{ __('Reply') }}
                                 </button>
                             </div>
                         </div>
@@ -152,13 +151,13 @@
                                         <span class="font-semibold text-xs text-stone-700">{{ $reply->user->name }}</span>
                                         <span class="text-[11px] text-stone-400">{{ $reply->created_at->diffForHumans() }}</span>
                                     </div>
-                                    <p class="text-sm text-stone-600 leading-relaxed">{{ $reply->body }}</p>
+                                    <p class="text-sm text-stone-600 leading-relaxed">{{ $reply->content }}</p>
 
                                     {{-- Delete reply --}}
                                     @if (auth()->id() === $reply->user_id || auth()->user()?->can('comment.delete.any'))
                                         <button wire:click="confirmDelete({{ $reply->id }})"
                                                 class="text-[11px] text-red-400 hover:text-red-600 mt-1.5 transition-colors">
-                                            Delete
+                                            {{ __('Delete') }}
                                         </button>
                                     @endif
                                 </div>
@@ -171,7 +170,7 @@
 
         @empty
             <div class="text-center py-10 text-stone-400">
-                <p class="text-sm">No comments yet. Be the first to share your thoughts!</p>
+                <p class="text-sm">{{ __('No comments yet. Be the first to share your thoughts!') }}</p>
             </div>
         @endforelse
     </div>
@@ -187,18 +186,18 @@
     @if ($confirmDeleteId !== null)
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full">
-                <h3 class="text-lg font-black text-stone-900 mb-2">Delete comment?</h3>
-                <p class="text-sm text-stone-500 mb-6">This action cannot be undone.</p>
+                <h3 class="text-lg font-black text-stone-900 mb-2">{{ __('Delete comment?') }}</h3>
+                <p class="text-sm text-stone-500 mb-6">{{ __('This action cannot be undone.') }}</p>
                 <div class="flex gap-3">
                     <button wire:click="cancelDelete"
                             class="flex-1 px-4 py-2.5 text-sm font-semibold text-stone-700
                                    bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors">
-                        Cancel
+                        {{ __('Cancel') }}
                     </button>
                     <button wire:click="deleteComment"
                             class="flex-1 px-4 py-2.5 text-sm font-bold text-white
                                    bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
-                        Delete
+                        {{ __('Delete') }}
                     </button>
                 </div>
             </div>

@@ -3,8 +3,8 @@
 
         {{-- Header --}}
         <div class="mb-8">
-            <h1 class="text-2xl font-black text-stone-900 tracking-tight">User Management</h1>
-            <p class="text-stone-500 text-sm mt-0.5">Manage roles and access for all registered users</p>
+            <h1 class="text-2xl font-black text-stone-900 tracking-tight">{{ __('User Management') }}</h1>
+            <p class="text-stone-500 text-sm mt-0.5">{{ __('Manage roles and access for all registered users') }}</p>
         </div>
 
         {{-- Flash --}}
@@ -31,7 +31,7 @@
                         'bg-white text-stone-600 border-stone-200 hover:border-stone-400' => $roleFilter !== $role->name,
                     ])
                 >
-                    {{ ucfirst($role->name) }}
+                    {{ __(ucfirst($role->name)) }}
                     <span class="ml-1.5 text-xs opacity-60">{{ $this->roleCounts[$role->name] ?? 0 }}</span>
                 </button>
             @endforeach
@@ -46,7 +46,7 @@
                 </svg>
             </span>
             <input wire:model.live.debounce.400ms="search" type="search"
-                   placeholder="Search by name or email…"
+                   placeholder="{{ __('Search by name or email…') }}"
                    class="w-full pl-9 pr-4 py-2 text-sm border border-stone-200 rounded-lg bg-white
                           focus:outline-none focus:ring-2 focus:ring-amber-400"/>
         </div>
@@ -56,10 +56,10 @@
             <table class="w-full text-sm">
                 <thead>
                 <tr class="border-b border-stone-100 text-left text-xs text-stone-500 uppercase tracking-wider">
-                    <th class="px-5 py-3 font-semibold">User</th>
-                    <th class="px-4 py-3 font-semibold">Role</th>
-                    <th class="px-4 py-3 font-semibold">Joined</th>
-                    <th class="px-4 py-3 font-semibold text-right">Actions</th>
+                    <th class="px-5 py-3 font-semibold">{{ __('User') }}</th>
+                    <th class="px-4 py-3 font-semibold">{{ __('Role') }}</th>
+                    <th class="px-4 py-3 font-semibold">{{ __('Joined') }}</th>
+                    <th class="px-4 py-3 font-semibold text-right">{{ __('Actions') }}</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-stone-50">
@@ -87,9 +87,9 @@
                                     <select wire:model="pendingRole"
                                             class="text-sm border border-amber-400 rounded-lg px-2 py-1 bg-white
                                                        focus:outline-none focus:ring-2 focus:ring-amber-400">
-                                        <option value="user">User</option>
-                                        <option value="editor">Editor</option>
-                                        <option value="admin">Admin</option>
+                                        <option value="user">{{ __('User') }}</option>
+                                        <option value="editor">{{ __('Editor') }}</option>
+                                        <option value="admin">{{ __('Admin') }}</option>
                                     </select>
                                     <button wire:click="confirmRoleChange"
                                             class="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors">
@@ -112,14 +112,14 @@
                                         'bg-blue-100 text-blue-700'   => $role === 'editor',
                                         'bg-stone-100 text-stone-600' => $role === 'user',
                                     ])>
-                                        {{ ucfirst($role) }}
+                                        {{ __(ucfirst($role)) }}
                                     </span>
                             @endif
                         </td>
 
                         {{-- Joined --}}
                         <td class="px-4 py-4 text-xs text-stone-400">
-                            {{ $user->created_at->format('d M Y') }}
+                            {{ $user->created_at->isoFormat('ll') }}
                         </td>
 
                         {{-- Actions --}}
@@ -129,7 +129,7 @@
                                 {{-- Edit role --}}
                                 @if ($editingUserId !== $user->id)
                                     <button wire:click="startEdit({{ $user->id }})"
-                                            title="Edit role"
+                                            title="{{ __('Edit role') }}"
                                             class="p-1.5 text-stone-400 hover:text-stone-700 rounded-md hover:bg-stone-100">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -142,7 +142,7 @@
                                 {{-- Quick promote to editor --}}
                                 @if (($user->roles->first()?->name ?? 'user') === 'user')
                                     <button wire:click="promoteToEditor({{ $user->id }})"
-                                            title="Promote to editor"
+                                            title="{{ __('Promote to editor') }}"
                                             class="p-1.5 text-blue-400 hover:text-blue-700 rounded-md hover:bg-blue-50">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -154,8 +154,8 @@
                                 {{-- Demote editor back to user --}}
                                 @if (($user->roles->first()?->name ?? '') === 'editor')
                                     <button wire:click="demoteToUser({{ $user->id }})"
-                                            title="Demote to user"
-                                            wire:confirm="Demote {{ $user->name }} back to regular user?"
+                                            title="{{ __('Demote to user') }}"
+                                            wire:confirm="{{ __('Demote :name back to regular user?', ['name' => $user->name]) }}"
                                             class="p-1.5 text-orange-400 hover:text-orange-700 rounded-md hover:bg-orange-50">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -171,7 +171,7 @@
                 @empty
                     <tr>
                         <td colspan="4" class="px-5 py-16 text-center text-stone-400">
-                            No users match your filters.
+                            {{ __('No users match your filters.') }}
                         </td>
                     </tr>
                 @endforelse

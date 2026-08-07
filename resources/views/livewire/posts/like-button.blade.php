@@ -11,7 +11,7 @@
         'bg-amber-400 text-stone-900 ring-2 ring-amber-300 ring-offset-1' => $liked,
         'bg-stone-100 text-stone-500 hover:bg-amber-50 hover:text-amber-600' => ! $liked,
     ])
-    title="{{ $liked ? 'Unlike' : 'Like' }}"
+    title="{{ $liked ? __('Unlike') : __('Like') }}"
 >
     {{-- Heart icon --}}
     <svg
@@ -26,5 +26,5 @@
                  a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
     </svg>
 
-    <span wire:text="$count">{{ $count }}</span>
+    <span>{{ $count }}</span>
 </button>

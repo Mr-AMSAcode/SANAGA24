@@ -1,5 +1,3 @@
-<x-layouts::app :title="$this->currentSectionLabel . ' — Sanaga24'">
-
     <div class="bg-white min-h-screen">
 
         {{-- Section header banner --}}
@@ -7,11 +5,11 @@
             <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight">{{ $this->currentSectionLabel }}</h1>
-                    <p class="text-white/60 text-sm mt-1">{{ $this->posts->total() }} articles</p>
+                    <p class="text-white/60 text-sm mt-1">{{ $this->posts->total() }} {{ __('articles') }}</p>
                 </div>
                 {{-- Sort tabs --}}
                 <div class="flex items-center gap-1 bg-white/10 rounded-sm p-1">
-                    @foreach (['latest' => 'Latest', 'popular' => 'Most Viewed', 'commented' => 'Most Discussed'] as $val => $label)
+                    @foreach (['latest' => __('Latest'), 'popular' => __('Most Viewed'), 'commented' => __('Most Discussed')] as $val => $label)
                         <button wire:click="$set('sort', '{{ $val }}')"
                             @class([
                                 'px-4 py-1.5 text-xs font-bold rounded-sm transition-colors',
@@ -35,7 +33,7 @@
                             'border-[#0d1b4b] text-[#0d1b4b]' => $section === '',
                             'border-transparent text-neutral-500 hover:text-neutral-800' => $section !== '',
                         ])>
-                        All News
+                        {{ __('All News') }}
                     </a>
                     @foreach ($this->sections as $sec)
                         <a wire:navigate href="{{ route('posts.section', $sec->value) }}"
@@ -44,7 +42,7 @@
                                 'border-[#0d1b4b] text-[#0d1b4b]' => $section === $sec->value,
                                 'border-transparent text-neutral-500 hover:text-neutral-800' => $section !== $sec->value,
                             ])>
-                            {{ $sec->label() }}
+                            {{ __($sec->label()) }}
                         </a>
                     @endforeach
                 </nav>
@@ -62,7 +60,7 @@
                 </svg>
             </span>
                 <input wire:model.live.debounce.400ms="search" type="search"
-                       placeholder="Search articles…"
+                       placeholder="{{ __('Search articles…') }}"
                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-neutral-200
                           focus:outline-none focus:ring-2 focus:ring-[#0d1b4b] rounded-sm bg-white"/>
             </div>
@@ -71,8 +69,8 @@
 
                 @if ($this->posts->isEmpty())
                     <div class="text-center py-20 text-neutral-400">
-                        <p class="font-bold text-lg">No articles found</p>
-                        <p class="text-sm mt-1">Try a different section or search term.</p>
+                        <p class="font-bold text-lg">{{ __('No articles found') }}</p>
+                        <p class="text-sm mt-1">{{ __('Try a different section or search term.') }}</p>
                     </div>
                 @else
                     @if ($this->posts->onFirstPage() && ! $search)
@@ -98,5 +96,3 @@
         </div>
 
     </div>
-
-</x-layouts::app>

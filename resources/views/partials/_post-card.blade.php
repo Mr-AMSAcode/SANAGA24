@@ -30,6 +30,7 @@
         PostSection::Science->value  => 'bg-cyan-700 text-white',
         PostSection::Opinion->value  => 'bg-rose-700 text-white',
         PostSection::World->value    => 'bg-blue-700 text-white',
+        PostSection::News->value     => 'bg-indigo-700 text-white',
     ];
 
     $pillClass = $sectionColors[$post->section->value ?? ''] ?? 'bg-neutral-700 text-white';
@@ -60,15 +61,15 @@
         <div class="pt-4">
             <div class="flex items-center gap-2 mb-2 text-xs text-neutral-500">
                 <span class="{{ $pillClass }} text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-sm">
-                    {{ $post->section->label() }}
+                    {{ __($post->section->label()) }}
                 </span>
-                <span>{{ $post->created_at->format('F j, Y') }}</span>
+                <span>{{ $post->created_at->isoFormat('LL') }}</span>
                 <span class="flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" stroke-width="2"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
                     </svg>
-                    {{ $readingTime }} min read
+                    {{ $readingTime }} {{ __('min read') }}
                 </span>
             </div>
 
@@ -92,15 +93,15 @@
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1.5 text-xs text-neutral-500">
                 <span class="{{ $pillClass }} text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-sm">
-                    {{ $post->section->label() }}
+                    {{ __($post->section->label()) }}
                 </span>
-                <span>{{ $post->created_at->format('M j, Y') }}</span>
+                <span>{{ $post->created_at->isoFormat('ll') }}</span>
                 <span class="flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" stroke-width="2"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
                     </svg>
-                    {{ $readingTime }} min
+                    {{ $readingTime }} {{ __('min') }}
                 </span>
             </div>
 
@@ -150,15 +151,15 @@
         {{-- Meta --}}
         <div class="flex items-center gap-2 mb-2 text-xs text-neutral-500">
             <span class="{{ $pillClass }} text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-sm">
-                {{ $post->section->label() }}
+                {{ __($post->section->label()) }}
             </span>
-            <span>{{ $post->created_at->format('M j, Y') }}</span>
+            <span>{{ $post->created_at->isoFormat('ll') }}</span>
             <span class="flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="10" stroke-width="2"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
                 </svg>
-                {{ $readingTime }} min read
+                {{ $readingTime }} {{ __('min read') }}
             </span>
         </div>
 

@@ -3,9 +3,10 @@
 
 <title>{{ $title ?? config('app.name') }}</title>
 
-<link rel="icon" href="./Logo_Sanaga24.png" sizes="any">
-<link rel="icon" href="./Logo_Sanaga24.png" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="alternate" type="application/rss+xml" title="Sanaga24 — RSS" href="{{ route('feed') }}">
+
+<link rel="icon" href="{{ asset('logo.jpeg') }}" sizes="any">
+<link rel="apple-touch-icon" href="{{ asset('logo.jpeg') }}">
 
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

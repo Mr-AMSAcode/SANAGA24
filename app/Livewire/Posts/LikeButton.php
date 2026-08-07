@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Posts;
 
+use App\Events\PostLikeCountUpdated;
 use App\Models\Comment;
 use App\Models\Post;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -65,14 +67,25 @@ class LikeButton extends Component
             return;
         }
 
+        // Likes are one click, not a form — silently drop excess rapid
+        // clicks rather than surfacing an error for something this low-stakes.
+        $rateLimitKey = 'like-toggle:'.auth()->id();
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 30)) {
+            return;
+        }
+        RateLimiter::hit($rateLimitKey, 60);
+
         $user = auth()->user();
 
         if ($this->liked) {
+            // Fetched then deleted on the instance (not a query-builder mass
+            // delete) so the Like model's deleted() hook fires and keeps
+            // PostStats.like_count in sync.
             \App\Models\Like::where([
                 'user_id' => $user->id,
                 'target_type' => $this->targetType,
                 'target_id' => $this->targetId,
-            ])->delete();
+            ])->first()?->delete();
 
             $this->liked = false;
             $this->count = max(0, $this->count - 1);
@@ -87,6 +100,34 @@ class LikeButton extends Component
             $this->liked = true;
             $this->count++;
         }
+
+        // Only posts get a live-updating count elsewhere on the page
+        // (PostShow's header); comment likes don't need this today.
+        if ($this->targetType === 'post') {
+            PostLikeCountUpdated::dispatch($this->targetId, $this->count);
+        }
+    }
+
+    /**
+     * Live-refresh the count when another visitor likes/unlikes the same
+     * target. $this->targetId isn't eligible for the #[On('echo:...')]
+     * attribute's static channel-name parsing, so this uses the dynamic
+     * getListeners() form instead.
+     */
+    public function getListeners(): array
+    {
+        if ($this->targetType !== 'post') {
+            return [];
+        }
+
+        return [
+            "echo:post.{$this->targetId},post.like-count-updated" => 'refreshLikeCount',
+        ];
+    }
+
+    public function refreshLikeCount(array $event): void
+    {
+        $this->count = $event['likeCount'];
     }
 
     public function render(): \Illuminate\View\View

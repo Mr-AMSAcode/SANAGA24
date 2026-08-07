@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Posts;
 
+use App\Events\CommentPosted;
 use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Rule;
@@ -71,18 +74,20 @@ class CommentThread extends Component
         abort_unless(auth()->user()->can('comment.create'), 403);
 
         $this->validateOnly('newComment');
+        $this->assertNotRateLimited('newComment');
 
         Comment::create([
             'post_id' => $this->post->id,
             'user_id' => auth()->id(),
             'parent_id' => null,
-            'body' => $this->newComment,
+            'content' => $this->newComment,
         ]);
 
         $this->newComment = '';
 
         // Notify the parent PostShow component to update its comment count badge
-        $this->dispatch('comment-posted');
+        $this->dispatch('comment-count-changed');
+        CommentPosted::dispatch($this->post->id);
     }
 
     // ─────────────────────────────────────────────────
@@ -108,17 +113,24 @@ class CommentThread extends Component
         abort_unless(auth()->user()->can('comment.create'), 403);
 
         $this->validateOnly('replyBody');
+        $this->assertNotRateLimited('replyBody');
 
         // Validate the parent actually belongs to this post
         $parent = Comment::where('post_id', $this->post->id)
             ->findOrFail($this->replyingToId);
 
-        Comment::create([
+        $reply = Comment::create([
             'post_id' => $this->post->id,
             'user_id' => auth()->id(),
             'parent_id' => $parent->id,
-            'body' => $this->replyBody,
+            'content' => $this->replyBody,
         ]);
+
+        // Let the parent comment's author know — but not when replying to
+        // your own comment.
+        if ($parent->user && $parent->user_id !== auth()->id()) {
+            $parent->user->notify(new \App\Notifications\CommentReplyNotification($reply));
+        }
 
         // Auto-expand the parent thread so the new reply is visible
         if (! in_array($parent->id, $this->expandedReplies)) {
@@ -127,7 +139,8 @@ class CommentThread extends Component
 
         $this->replyingToId = null;
         $this->replyBody = '';
-        $this->dispatch('comment-posted');
+        $this->dispatch('comment-count-changed');
+        CommentPosted::dispatch($this->post->id);
     }
 
     // ─────────────────────────────────────────────────
@@ -151,6 +164,21 @@ class CommentThread extends Component
 
         $comment->delete();
         $this->confirmDeleteId = null;
+        $this->dispatch('comment-count-changed');
+        CommentPosted::dispatch($this->post->id);
+    }
+
+    /**
+     * Live-refresh the thread when another visitor posts/removes a
+     * comment on this same post. $this->post->id isn't a plain scalar
+     * property, so this needs the dynamic getListeners() form rather
+     * than a #[On('echo:...')] attribute.
+     */
+    public function getListeners(): array
+    {
+        return [
+            "echo:post.{$this->post->id},comment.posted" => '$refresh',
+        ];
     }
 
     // ─────────────────────────────────────────────────
@@ -166,6 +194,24 @@ class CommentThread extends Component
         }
     }
 
+    /**
+     * Shared budget across top-level comments and replies — 5 per minute
+     * per user. Both create a Comment row, so the abuse vector is the same
+     * regardless of which form was used.
+     */
+    private function assertNotRateLimited(string $field): void
+    {
+        $key = 'post-comment:'.auth()->id();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages([
+                $field => "You're commenting too quickly. Please wait a minute and try again.",
+            ]);
+        }
+
+        RateLimiter::hit($key, 60);
+    }
+
     // ─────────────────────────────────────────────────
     // Computed
     // ─────────────────────────────────────────────────
@@ -178,11 +224,12 @@ class CommentThread extends Component
     {
         return $this->post->comments()
             ->topLevel()
+            ->approved()
             ->with([
                 'user:id,name',
-                'replies' => fn ($q) => $q->with('user:id,name')->latest(),
+                'replies' => fn ($q) => $q->approved()->with('user:id,name')->latest(),
             ])
-            ->withCount('replies')
+            ->withCount(['replies' => fn ($q) => $q->approved()])
             ->latest()
             ->paginate(20);
     }

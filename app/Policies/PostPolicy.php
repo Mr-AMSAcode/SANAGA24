@@ -16,6 +16,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
  * Usage:
  *   $this->authorize('update', $post);     // in Livewire component or Controller
  *   Gate::authorize('update', $post);       // in Service class
+ *
  *   @can('update', $post) ... @endcan       // in Blade
  */
 class PostPolicy
@@ -48,6 +49,16 @@ class PostPolicy
 
         // Draft / Archived: only the owning editor (or admin via before())
         return $user !== null && $post->editor_id === $user->id;
+    }
+
+    /**
+     * Can the user view their own post list (the editor dashboard's
+     * "My Posts" page)? Same permission as creating — anyone who can
+     * write posts can see their own list.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->can('post.create');
     }
 
     /**

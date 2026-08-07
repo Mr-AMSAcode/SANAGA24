@@ -24,6 +24,16 @@ class PostStats extends Model
         'updated_at',
     ];
 
+    /**
+     * Mirrors the DB column defaults on the in-memory model, so a freshly
+     * created instance reads as 0 immediately without a round-trip refresh.
+     */
+    protected $attributes = [
+        'view_count' => 0,
+        'like_count' => 0,
+        'comment_count' => 0,
+    ];
+
     protected function casts(): array
     {
         return [
@@ -44,7 +54,7 @@ class PostStats extends Model
     }
 
     // ─────────────────────────────────────────────────
-    // Helpers — called by UpdatePostStats queued job
+    // Helpers
     // ─────────────────────────────────────────────────
 
     public function incrementViews(): void
@@ -54,6 +64,11 @@ class PostStats extends Model
         $this->save();
     }
 
+    /**
+     * Recompute like_count/comment_count from source data.
+     * Comment and Like models keep these in sync automatically on
+     * create/delete — this is only a manual reconciliation helper.
+     */
     public function recalculate(): void
     {
         $post = $this->post()->with('allComments', 'likes')->first();

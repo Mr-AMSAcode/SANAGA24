@@ -39,6 +39,7 @@ class Dashboard extends Component
             'total_posts' => $posts->count(),
             'published' => $published->count(),
             'drafts' => $posts->where('status', PostStatus::Draft)->count(),
+            'scheduled' => $posts->where('status', PostStatus::Scheduled)->count(),
             'archived' => $posts->where('status', PostStatus::Archived)->count(),
             'trashed' => $posts->whereNotNull('deleted_at')->count(),
             'total_views' => $posts->sum(fn ($p) => $p->stats?->view_count ?? 0),

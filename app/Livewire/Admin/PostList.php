@@ -106,9 +106,10 @@ class PostList extends Component
     public function bulkDelete(): void
     {
         abort_unless(auth()->user()?->can('post.delete.any'), 403);
+        $count = count($this->selected);
         Post::whereIn('id', $this->selected)->delete();
         $this->selected = [];
-        session()->flash('success', count($this->selected).' posts moved to trash.');
+        session()->flash('success', "{$count} posts moved to trash.");
     }
 
     public function bulkPublish(): void
@@ -128,8 +129,13 @@ class PostList extends Component
             return;
         }
 
-        $this->sortBy = $this->sortBy === $column ? $this->sortBy : $column;
-        $this->sortDir = $this->sortBy === $column && $this->sortDir === 'asc' ? 'desc' : 'asc';
+        if ($this->sortBy === $column) {
+            $this->sortDir = $this->sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDir = 'desc';
+        }
+
         $this->resetPage();
     }
 

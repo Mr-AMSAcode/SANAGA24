@@ -60,7 +60,13 @@ class PostSeeder extends Seeder
                         ->create();
 
                     // ── PostStats (1:1, required for trending queries) ─────
+                    // like_count/comment_count start at 0: the Comment/Like
+                    // model hooks increment them for real below, as those
+                    // rows are actually created, so the seeded counts stay
+                    // consistent with the seeded rows. view_count keeps its
+                    // random factory value for realistic "trending" demo data.
                     PostStats::factory()
+                        ->state(['like_count' => 0, 'comment_count' => 0])
                         ->for($post)
                         ->create();
 

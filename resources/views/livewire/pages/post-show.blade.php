@@ -8,24 +8,24 @@
             <article>
                 {{-- Section pill + meta --}}
                 @php
-                    $sectionColors = ['politics'=>'bg-[#0d1b4b]','crime'=>'bg-red-700','sports'=>'bg-emerald-700','business'=>'bg-blue-700','education'=>'bg-purple-700','culture'=>'bg-amber-600','health'=>'bg-teal-700','technology'=>'bg-cyan-700'];
+                    $sectionColors = ['politics'=>'bg-[#0d1b4b]','sports'=>'bg-emerald-700','culture'=>'bg-amber-600','science'=>'bg-cyan-700','opinion'=>'bg-rose-700','world'=>'bg-blue-700','actualite'=>'bg-indigo-700'];
                     $pillClass = ($sectionColors[$post->section->value ?? ''] ?? 'bg-[#0d1b4b]') . ' text-white';
                     $readingTime = max(1, (int) ceil(str_word_count(strip_tags($post->content ?? '')) / 200));
                 @endphp
 
                 <div class="flex flex-wrap items-center gap-3 mb-4 text-sm text-neutral-500">
                 <span class="{{ $pillClass }} text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-sm">
-                    {{ $post->section->label() }}
+                    {{ __($post->section->label()) }}
                 </span>
                     <time datetime="{{ $post->created_at->toIso8601String() }}">
-                        {{ $post->created_at->format('F j, Y') }}
+                        {{ $post->created_at->isoFormat('LL') }}
                     </time>
                     <span class="flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" stroke-width="2"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
                     </svg>
-                    {{ $readingTime }} Min{{ $readingTime > 1 ? 's' : '' }} Read
+                    {{ $readingTime }} {{ __('min read') }}
                 </span>
                     <span class="flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +45,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                             </svg>
-                            Edit
+                            {{ __('Edit') }}
                         </a>
                     @endcan
                 </div>
@@ -62,12 +62,21 @@
                         {{ substr($post->editor->name ?? '?', 0, 1) }}
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-neutral-800">{{ $post->editor->name ?? 'Unknown' }}</p>
-                        <p class="text-xs text-neutral-400">{{ $post->created_at->format('F j, Y \a\t g:i A') }}</p>
+                        @if ($post->editor)
+                            <a wire:navigate href="{{ route('authors.show', $post->editor) }}"
+                               class="text-sm font-bold text-neutral-800 hover:text-[#0d1b4b] transition-colors">
+                                {{ $post->editor->name }}
+                            </a>
+                        @else
+                            <p class="text-sm font-bold text-neutral-800">{{ __('Unknown') }}</p>
+                        @endif
+                        <p class="text-xs text-neutral-400">
+                            {{ __(':date at :time', ['date' => $post->created_at->isoFormat('LL'), 'time' => $post->created_at->isoFormat('LT')]) }}
+                        </p>
                     </div>
                     {{-- Share icons --}}
                     <div class="ml-auto flex items-center gap-2">
-                        <span class="text-xs text-neutral-400 font-medium">Share:</span>
+                        <span class="text-xs text-neutral-400 font-medium">{{ __('Share:') }}</span>
                         <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(request()->url()) }}"
                             target="_blank"
                             class="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity">
@@ -126,29 +135,59 @@
                     </div>
                 @endif
 
+                {{-- Videos --}}
+                @if ($post->videos->isNotEmpty())
+                    <div class="mb-8 space-y-4">
+                        @foreach ($post->videos as $video)
+                            <div class="relative w-full aspect-video rounded-sm overflow-hidden bg-neutral-900">
+                                @if ($video->isEmbed())
+                                    <iframe
+                                        src="{{ $video->url }}"
+                                        title="{{ $post->title }}"
+                                        class="absolute inset-0 w-full h-full"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowfullscreen
+                                        loading="lazy"
+                                    ></iframe>
+                                @else
+                                    <video src="{{ $video->url }}" controls preload="metadata"
+                                           class="absolute inset-0 w-full h-full object-contain"></video>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 {{-- Like + comment bar --}}
                 <div class="flex items-center gap-4 p-4 bg-neutral-50 border border-neutral-100 rounded-sm mb-8">
                     <livewire:posts.like-button :target="$post" :key="'post-like-'.$post->id"/>
                     <span class="text-sm text-neutral-500">
-                    {{ $likeCount }} {{ Str::plural('person', $likeCount) }} liked this
+                    {{ trans_choice(':count person liked this|:count people liked this', $likeCount, ['count' => $likeCount]) }}
                 </span>
                     <a href="#comments" class="ml-auto flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
-                        {{ $post->stats?->comment_count ?? 0 }} comments
+                        {{ trans_choice(':count comment|:count comments', $post->stats?->comment_count ?? 0, ['count' => $post->stats?->comment_count ?? 0]) }}
                     </a>
                 </div>
 
                 {{-- Tags / Related sections --}}
                 <div class="flex flex-wrap items-center gap-2 mb-8 pb-8 border-b border-neutral-100">
-                    <span class="text-xs font-bold text-neutral-500 uppercase tracking-wider">Tags:</span>
+                    <span class="text-xs font-bold text-neutral-500 uppercase tracking-wider">{{ __('Tags:') }}</span>
                     <a wire:navigate href="{{ route('posts.section', $post->section->value) }}"
                         class="text-xs font-semibold bg-neutral-100 hover:bg-[#0d1b4b] hover:text-white
                             text-neutral-700 px-3 py-1 rounded-sm transition-colors">
-                        {{ $post->section->label() }}
+                        {{ __($post->section->label()) }}
                     </a>
+                    @foreach ($post->tags as $tag)
+                        <a wire:navigate href="{{ route('posts.tag', $tag) }}"
+                            class="text-xs font-semibold bg-neutral-100 hover:bg-[#0d1b4b] hover:text-white
+                                text-neutral-700 px-3 py-1 rounded-sm transition-colors">
+                            #{{ $tag->name }}
+                        </a>
+                    @endforeach
                 </div>
 
                 {{-- Comments --}}
@@ -162,7 +201,7 @@
                 @if ($this->relatedPosts->isNotEmpty())
                     <div>
                         <h3 class="text-base font-extrabold text-neutral-900 mb-4 pb-2 border-b-2 border-neutral-900">
-                            Related Articles
+                            {{ __('Related Articles') }}
                         </h3>
                         <div class="space-y-0 divide-y divide-neutral-100">
                             @foreach ($this->relatedPosts as $related)
@@ -176,7 +215,7 @@
                 @if ($this->latestPosts->isNotEmpty())
                     <div>
                         <h3 class="text-base font-extrabold text-neutral-900 mb-4 pb-2 border-b-2 border-neutral-900">
-                            Latest News
+                            {{ __('Latest News') }}
                         </h3>
                         <div class="space-y-0 divide-y divide-neutral-100">
                             @foreach ($this->latestPosts as $latest)

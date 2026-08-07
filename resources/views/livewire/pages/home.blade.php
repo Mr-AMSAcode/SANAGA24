@@ -7,7 +7,7 @@
         <div class="bg-[#0d1b4b] text-white text-xs overflow-hidden">
             <div class="flex items-stretch">
                 <span class="flex-shrink-0 bg-amber-400 text-[#0d1b4b] font-black uppercase tracking-widest text-[11px] px-4 flex items-center">
-                    Trending
+                    {{ __('Trending') }}
                 </span>
                 <div class="overflow-hidden flex-1 relative">
                     <div class="flex animate-ticker whitespace-nowrap py-2 gap-0">
@@ -38,7 +38,7 @@
              HERO SECTION — latest 3 posts carousel-style
         ═══════════════════════════════════════════════════════════ --}}
         @if ($this->heroPosts->isNotEmpty())
-            <section aria-label="Featured Stories">
+            <section aria-label="{{ __('Featured Stories') }}">
                 @php $hero = $this->heroPosts->first(); $side = $this->heroPosts->skip(1); @endphp
                 <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-1">
 
@@ -59,10 +59,10 @@
              RECENT NEWS — latest 4 posts from any section
         ═══════════════════════════════════════════════════════════ --}}
         @if ($this->recentSection->isNotEmpty())
-            <section aria-label="Recent News">
+            <section aria-label="{{ __('Recent News') }}">
                 <div class="flex items-center gap-4 mb-6">
                     <div class="h-5 w-1 bg-amber-400 rounded-full"></div>
-                    <h2 class="text-lg font-black uppercase tracking-widest text-[#0d1b4b]">Recent News</h2>
+                    <h2 class="text-lg font-black uppercase tracking-widest text-[#0d1b4b]">{{ __('Recent News') }}</h2>
                     <div class="flex-1 h-px bg-neutral-300"></div>
                 </div>
 
@@ -78,14 +78,14 @@
              SECTION BLOCKS — per-section posts with dynamic layouts
         ═══════════════════════════════════════════════════════════ --}}
         @foreach ($this->sectionBlocks as $block)
-            <section aria-label="{{ $block['label'] }}">
+            <section aria-label="{{ __($block['label']) }}">
 
                 {{-- Section Header --}}
                 <div class="flex items-center justify-between gap-4 mb-6">
                     <div class="flex items-center gap-3">
                         <div class="h-6 w-1 bg-[#0d1b4b] rounded-full"></div>
                         <h2 class="text-lg font-black uppercase tracking-widest text-[#0d1b4b]">
-                            {{ $block['label'] }}
+                            {{ __($block['label']) }}
                         </h2>
                     </div>
                     <div class="flex-1 h-px bg-neutral-300"></div>
@@ -93,7 +93,7 @@
                        class="flex-shrink-0 text-xs font-bold uppercase tracking-widest text-[#0d1b4b]
                               border border-[#0d1b4b] px-3 py-1 rounded-sm
                               hover:bg-[#0d1b4b] hover:text-white transition-colors">
-                        All {{ $block['label'] }} →
+                        {{ __('All :section →', ['section' => __($block['label'])]) }}
                     </a>
                 </div>
 
@@ -156,10 +156,10 @@
                                disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span wire:loading.remove wire:target="loadMoreSection('{{ $block['slug'] }}')">
-                            Load More {{ $block['label'] }}
+                            {{ __('Load More :section', ['section' => __($block['label'])]) }}
                         </span>
                         <span wire:loading wire:target="loadMoreSection('{{ $block['slug'] }}')">
-                            Loading…
+                            {{ __('Loading…') }}
                         </span>
                     </button>
                 </div>

@@ -32,6 +32,26 @@ class Like extends Model
         ];
     }
 
+    /**
+     * Keep the denormalized PostStats.like_count in sync.
+     * Only posts have a stats row — comment likes are counted live via
+     * the relationship, so target_type 'comment' is a no-op here.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $like): void {
+            if ($like->target_type === 'post') {
+                PostStats::where('post_id', $like->target_id)->increment('like_count');
+            }
+        });
+
+        static::deleted(function (self $like): void {
+            if ($like->target_type === 'post') {
+                PostStats::where('post_id', $like->target_id)->decrement('like_count');
+            }
+        });
+    }
+
     // ─────────────────────────────────────────────────
     // Relationships
     // ─────────────────────────────────────────────────

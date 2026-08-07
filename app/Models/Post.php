@@ -60,6 +60,32 @@ class Post extends Model
     }
 
     /**
+     * Videos attached to this post — either an uploaded file or a
+     * YouTube/Vimeo embed (see Video::isUpload()/isEmbed()).
+     */
+    public function videos(): HasMany
+    {
+        return $this->hasMany(Video::class);
+    }
+
+    /**
+     * Tags/keywords attached to this post.
+     */
+    public function tags(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class);
+    }
+
+    /**
+     * Snapshots of this post's editable fields taken before each edit —
+     * newest first.
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(PostRevision::class)->latest();
+    }
+
+    /**
      * Top-level comments on this post (parent_id IS NULL).
      */
     public function comments(): HasMany
@@ -93,10 +119,15 @@ class Post extends Model
 
     /**
      * Scheduling / lifecycle metadata (1:1).
+     *
+     * Fully-qualified on purpose: this file imports the PostStatus *enum*
+     * (App\Enums\PostStatus) for the `status` cast above, which would
+     * otherwise shadow the PostStatus *model* (App\Models\PostStatus, same
+     * namespace as this class) that this relation actually needs.
      */
     public function postStatus(): HasOne
     {
-        return $this->hasOne(PostStatus::class);
+        return $this->hasOne(\App\Models\PostStatus::class);
     }
 
     // ─────────────────────────────────────────────────
@@ -120,11 +151,59 @@ class Post extends Model
     }
 
     /**
+     * Filter to posts carrying a given tag (by slug).
+     */
+    public function scopeWithTagSlug(\Illuminate\Database\Eloquent\Builder $query, string $slug): void
+    {
+        $query->whereHas('tags', fn ($q) => $q->where('slug', $slug));
+    }
+
+    /**
      * Posts owned by a specific editor.
      */
     public function scopeByEditor(\Illuminate\Database\Eloquent\Builder $query, int $editorId): void
     {
         $query->where('editor_id', $editorId);
+    }
+
+    /**
+     * Full-text search across title (weighted higher) and content, via the
+     * generated `search_vector` column (see the add_search_vector_to_posts
+     * migration). websearch_to_tsquery understands search-engine syntax:
+     * quoted phrases, "or", and "-exclude".
+     */
+    public function scopeSearch(\Illuminate\Database\Eloquent\Builder $query, string $term): void
+    {
+        $query->whereRaw("search_vector @@ websearch_to_tsquery('english', ?)", [$term]);
+    }
+
+    /**
+     * Order by full-text match quality — pair with scopeSearch() for the
+     * default "best match first" sort.
+     */
+    public function scopeOrderByRelevance(\Illuminate\Database\Eloquent\Builder $query, string $term): void
+    {
+        $query->orderByRaw("ts_rank(search_vector, websearch_to_tsquery('english', ?)) DESC", [$term]);
+    }
+
+    /**
+     * Scheduled posts whose go-live time has arrived — picked up by the
+     * posts:publish-scheduled command.
+     */
+    public function scopeDueForPublishing(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('status', PostStatus::Scheduled)
+            ->whereHas('postStatus', fn ($q) => $q->where('active_period_start', '<=', now()));
+    }
+
+    /**
+     * Published posts whose active window has expired — picked up by the
+     * posts:archive-expired command.
+     */
+    public function scopeDueForArchiving(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('status', PostStatus::Published)
+            ->whereHas('postStatus', fn ($q) => $q->whereNotNull('active_period_end')->where('active_period_end', '<=', now()));
     }
 
     // ─────────────────────────────────────────────────
@@ -148,6 +227,11 @@ class Post extends Model
     public function isDraft(): bool
     {
         return $this->status === PostStatus::Draft;
+    }
+
+    public function isScheduled(): bool
+    {
+        return $this->status === PostStatus::Scheduled;
     }
 
     // ─────────────────────────────────────────────────

@@ -29,7 +29,7 @@ class PostShow extends Component
             Gate::authorize('update', $post);
         }
 
-        $this->post      = $post->load(['editor:id,name', 'pictures', 'stats']);
+        $this->post      = $post->load(['editor:id,name', 'pictures', 'videos', 'stats', 'tags']);
         $this->likeCount = $post->stats?->like_count ?? $post->likes()->count();
 
         if (auth()->check()) {
@@ -45,22 +45,26 @@ class PostShow extends Component
     private function incrementViewCount(): void
     {
         try {
-            $this->post->stats()->updateOrCreate(
-                ['post_id' => $this->post->id],
-                ['view_count' => \DB::raw('view_count + 1')]
-            );
+            // updateOrCreate() with a raw "view_count + 1" expression only
+            // works for the UPDATE path — as an INSERT value it references
+            // a column that doesn't exist yet. firstOrCreate() + increment()
+            // handles both the existing-row and no-row-yet cases correctly.
+            $this->post->stats()
+                ->firstOrCreate(['post_id' => $this->post->id])
+                ->increment('view_count');
         } catch (\Throwable) {
             // Non-critical — never break the page for this
         }
     }
 
     /**
-     * Refresh comment count badge when a new comment is posted.
+     * Refresh the comment count badge — the Comment model itself keeps
+     * PostStats.comment_count in sync on create/delete, this just re-pulls
+     * the current value for display.
      */
-    #[On('comment-posted')]
+    #[On('comment-count-changed')]
     public function refreshCommentCount(): void
     {
-        $this->post->stats()->increment('comment_count');
         $this->post->refresh();
     }
 

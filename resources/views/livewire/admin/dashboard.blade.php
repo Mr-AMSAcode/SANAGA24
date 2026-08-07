@@ -1,23 +1,40 @@
 <div class="min-h-screen bg-stone-50">
     <div class="max-w-6xl mx-auto px-6 py-10">
 
-        <div class="mb-8">
-            <h1 class="text-2xl font-black text-stone-900 tracking-tight">Admin Dashboard</h1>
-            <p class="text-stone-500 text-sm mt-0.5">Site-wide overview — {{ now()->format('d F Y') }}</p>
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-black text-stone-900 tracking-tight">{{ __('Admin Dashboard') }}</h1>
+                <p class="text-stone-500 text-sm mt-0.5">{{ __('Site-wide overview — :date', ['date' => now()->isoFormat('LL')]) }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a wire:navigate href="{{ route('admin.posts') }}"
+                   class="px-3 py-2 text-xs font-bold text-stone-700 bg-white border border-stone-200
+                          rounded-lg hover:bg-stone-50 transition-colors">{{ __('Posts') }}</a>
+                <a wire:navigate href="{{ route('admin.comments') }}"
+                   class="px-3 py-2 text-xs font-bold text-stone-700 bg-white border border-stone-200
+                          rounded-lg hover:bg-stone-50 transition-colors">{{ __('Comments') }}</a>
+                <a wire:navigate href="{{ route('admin.users') }}"
+                   class="px-3 py-2 text-xs font-bold text-stone-700 bg-white border border-stone-200
+                          rounded-lg hover:bg-stone-50 transition-colors">{{ __('Users') }}</a>
+                <a wire:navigate href="{{ route('admin.newsletter') }}"
+                   class="px-3 py-2 text-xs font-bold text-stone-700 bg-white border border-stone-200
+                          rounded-lg hover:bg-stone-50 transition-colors">{{ __('Newsletter') }}</a>
+            </div>
         </div>
 
         {{-- Stats grid --}}
         @php $s = $this->siteStats; @endphp
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
             @foreach ([
-                ['label' => 'Total Users',    'value' => number_format($s['total_users']),    'color' => 'text-stone-900',  'bg' => 'bg-white'],
-                ['label' => 'Editors',        'value' => number_format($s['total_editors']),  'color' => 'text-blue-600',   'bg' => 'bg-blue-50'],
-                ['label' => 'Published',      'value' => number_format($s['published']),      'color' => 'text-green-600',  'bg' => 'bg-green-50'],
-                ['label' => 'Total Views',    'value' => number_format($s['total_views']),    'color' => 'text-amber-600',  'bg' => 'bg-amber-50'],
-                ['label' => 'Total Posts',    'value' => number_format($s['total_posts']),    'color' => 'text-stone-900',  'bg' => 'bg-white'],
-                ['label' => 'Drafts',         'value' => number_format($s['drafts']),         'color' => 'text-stone-600',  'bg' => 'bg-stone-50'],
-                ['label' => 'Total Likes',    'value' => number_format($s['total_likes']),    'color' => 'text-rose-600',   'bg' => 'bg-rose-50'],
-                ['label' => 'Total Comments', 'value' => number_format($s['total_comments']), 'color' => 'text-indigo-600', 'bg' => 'bg-indigo-50'],
+                ['label' => __('Total Users'),    'value' => number_format($s['total_users']),    'color' => 'text-stone-900',  'bg' => 'bg-white'],
+                ['label' => __('Editors'),        'value' => number_format($s['total_editors']),  'color' => 'text-blue-600',   'bg' => 'bg-blue-50'],
+                ['label' => __('Total Posts'),    'value' => number_format($s['total_posts']),    'color' => 'text-stone-900',  'bg' => 'bg-white'],
+                ['label' => __('Published'),      'value' => number_format($s['published']),      'color' => 'text-green-600',  'bg' => 'bg-green-50'],
+                ['label' => __('Scheduled'),      'value' => number_format($s['scheduled']),      'color' => 'text-blue-600',   'bg' => 'bg-blue-50'],
+                ['label' => __('Drafts'),         'value' => number_format($s['drafts']),         'color' => 'text-stone-600',  'bg' => 'bg-stone-50'],
+                ['label' => __('Total Views'),    'value' => number_format($s['total_views']),    'color' => 'text-amber-600',  'bg' => 'bg-amber-50'],
+                ['label' => __('Total Likes'),    'value' => number_format($s['total_likes']),    'color' => 'text-rose-600',   'bg' => 'bg-rose-50'],
+                ['label' => __('Total Comments'), 'value' => number_format($s['total_comments']), 'color' => 'text-indigo-600', 'bg' => 'bg-indigo-50'],
             ] as $stat)
                 <div class="rounded-xl border border-stone-100 {{ $stat['bg'] }} p-5 shadow-sm">
                     <p class="text-xs text-stone-500 font-semibold uppercase tracking-wider mb-1">{{ $stat['label'] }}</p>
@@ -31,8 +48,8 @@
             {{-- Top editors --}}
             <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-stone-100">
-                    <h2 class="font-black text-stone-900">Top Editors</h2>
-                    <p class="text-xs text-stone-400 mt-0.5">By published post count</p>
+                    <h2 class="font-black text-stone-900">{{ __('Top Editors') }}</h2>
+                    <p class="text-xs text-stone-400 mt-0.5">{{ __('By published post count') }}</p>
                 </div>
                 <ul class="divide-y divide-stone-50">
                     @forelse ($this->topEditors as $i => $editor)
@@ -49,7 +66,7 @@
                             <span class="text-sm font-bold text-amber-600">{{ $editor->published_count }}</span>
                         </li>
                     @empty
-                        <li class="px-6 py-8 text-center text-stone-400 text-sm">No editors yet.</li>
+                        <li class="px-6 py-8 text-center text-stone-400 text-sm">{{ __('No editors yet.') }}</li>
                     @endforelse
                 </ul>
             </div>
@@ -58,11 +75,11 @@
             <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                     <div>
-                        <h2 class="font-black text-stone-900">Recent Posts</h2>
-                        <p class="text-xs text-stone-400 mt-0.5">Across all editors</p>
+                        <h2 class="font-black text-stone-900">{{ __('Recent Posts') }}</h2>
+                        <p class="text-xs text-stone-400 mt-0.5">{{ __('Across all editors') }}</p>
                     </div>
                     <a wire:navigate href="{{ route('admin.posts') }}"
-                       class="text-xs text-amber-600 hover:underline font-semibold">View all →</a>
+                       class="text-xs text-amber-600 hover:underline font-semibold">{{ __('View all →') }}</a>
                 </div>
                 <ul class="divide-y divide-stone-50">
                     @forelse ($this->recentPosts as $post)
@@ -84,7 +101,7 @@
                             </div>
                         </li>
                     @empty
-                        <li class="px-6 py-8 text-center text-stone-400 text-sm">No posts yet.</li>
+                        <li class="px-6 py-8 text-center text-stone-400 text-sm">{{ __('No posts yet.') }}</li>
                     @endforelse
                 </ul>
             </div>
@@ -93,11 +110,11 @@
             <div class="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
                     <div>
-                        <h2 class="font-black text-stone-900">New Members</h2>
-                        <p class="text-xs text-stone-400 mt-0.5">Recently registered</p>
+                        <h2 class="font-black text-stone-900">{{ __('New Members') }}</h2>
+                        <p class="text-xs text-stone-400 mt-0.5">{{ __('Recently registered') }}</p>
                     </div>
                     <a wire:navigate href="{{ route('admin.users') }}"
-                       class="text-xs text-amber-600 hover:underline font-semibold">Manage →</a>
+                       class="text-xs text-amber-600 hover:underline font-semibold">{{ __('Manage →') }}</a>
                 </div>
                 <ul class="divide-y divide-stone-50">
                     @forelse ($this->recentUsers as $user)
@@ -117,11 +134,11 @@
                                 'bg-blue-100 text-blue-700'   => $role === 'editor',
                                 'bg-stone-100 text-stone-500' => $role === 'user',
                             ])>
-                                {{ ucfirst($role) }}
+                                {{ __(ucfirst($role)) }}
                             </span>
                         </li>
                     @empty
-                        <li class="px-6 py-8 text-center text-stone-400 text-sm">No users yet.</li>
+                        <li class="px-6 py-8 text-center text-stone-400 text-sm">{{ __('No users yet.') }}</li>
                     @endforelse
                 </ul>
             </div>

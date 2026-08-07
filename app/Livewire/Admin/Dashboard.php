@@ -35,6 +35,7 @@ class Dashboard extends Component
             'total_posts' => Post::withTrashed()->count(),
             'published' => Post::where('status', PostStatus::Published)->count(),
             'drafts' => Post::where('status', PostStatus::Draft)->count(),
+            'scheduled' => Post::where('status', PostStatus::Scheduled)->count(),
             'archived' => Post::where('status', PostStatus::Archived)->count(),
             'total_views' => DB::table('post_stats')->sum('view_count'),
             'total_likes' => DB::table('post_stats')->sum('like_count'),
