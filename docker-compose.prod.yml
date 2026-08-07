@@ -1,0 +1,120 @@
+name: sanaga24
+
+x-app-image: &app-image
+  build:
+    context: .
+    dockerfile: docker/production/Dockerfile
+    args:
+      APP_UID: '1000'
+      APP_GID: '1000'
+  image: sanaga24-app:latest
+  env_file: .env
+  # env_file only injects environment *variables* — it does not put an
+  # actual .env file on disk inside the container. Bind-mounting the real
+  # one is what lets `php artisan key:generate` (and anything else that
+  # reads/writes .env directly rather than through getenv()) work at all.
+  volumes:
+    - ./.env:/var/www/html/.env
+  depends_on:
+    pgsql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks:
+    - sanaga24
+
+services:
+  # Serves the site itself — Nginx + PHP-FPM in one container. Only this
+  # service runs migrations/seeding/config-caching on boot (see
+  # docker/production/entrypoint.sh); the others below share the same
+  # image but skip that via CONTAINER_ROLE.
+  app:
+    <<: *app-image
+    restart: unless-stopped
+    ports:
+      # Loopback-only — the VPS's host-level Nginx (see DEPLOIEMENT.md)
+      # is what's actually exposed to the internet, terminating TLS and
+      # reverse-proxying here. Never publish this on 0.0.0.0.
+      - '127.0.0.1:8000:80'
+    volumes:
+      # <<: merges top-level keys but doesn't deep-merge lists — this
+      # service's own `volumes:` fully replaces the anchor's, so the .env
+      # mount has to be repeated here alongside the storage volume.
+      - ./.env:/var/www/html/.env
+      - app-storage:/var/www/html/storage/app/public
+
+  # Processes queued jobs — e.g. CommentReplyNotification emails.
+  queue:
+    <<: *app-image
+    restart: unless-stopped
+    environment:
+      CONTAINER_ROLE: queue
+    depends_on:
+      - app
+    command: ['php', 'artisan', 'queue:work', '--tries=3', '--sleep=3', '--max-time=3600']
+
+  # Runs scheduled artisan commands (post publishing/archiving) every
+  # minute — a self-contained substitute for a host crontab entry.
+  scheduler:
+    <<: *app-image
+    restart: unless-stopped
+    environment:
+      CONTAINER_ROLE: scheduler
+    depends_on:
+      - app
+    command: ['sh', '-c', 'while true; do php artisan schedule:run --no-interaction; sleep 60; done']
+
+  # Self-hosted WebSocket server for live comment/like updates
+  # (BROADCAST_CONNECTION=reverb — no third-party real-time service).
+  reverb:
+    <<: *app-image
+    restart: unless-stopped
+    environment:
+      CONTAINER_ROLE: reverb
+    depends_on:
+      - app
+    ports:
+      - '127.0.0.1:${REVERB_SERVER_PORT:-8082}:8080'
+    command: ['php', 'artisan', 'reverb:start', '--host=0.0.0.0', '--port=8080']
+
+  pgsql:
+    image: 'postgres:18-alpine'
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: '${DB_DATABASE}'
+      POSTGRES_USER: '${DB_USERNAME}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+    volumes:
+      - pgsql-data:/var/lib/postgresql
+    networks:
+      - sanaga24
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-q', '-d', '${DB_DATABASE}', '-U', '${DB_USERNAME}']
+      retries: 5
+      timeout: 5s
+      interval: 5s
+
+  redis:
+    image: 'redis:alpine'
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - sanaga24
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      retries: 5
+      timeout: 5s
+      interval: 5s
+
+networks:
+  sanaga24:
+    driver: bridge
+
+volumes:
+  pgsql-data:
+    driver: local
+  redis-data:
+    driver: local
+  app-storage:
+    driver: local

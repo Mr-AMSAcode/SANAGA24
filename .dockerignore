@@ -1,0 +1,37 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+
+node_modules
+vendor
+
+# Stale local dev artifacts — must never leak into the image. Letting
+# bootstrap/cache/packages.php through here is exactly what broke the
+# first production build: it referenced laravel/sail (a dev-only
+# dependency excluded by `composer install --no-dev`), and Laravel's
+# post-autoload package:discover step failed trying to autoload it.
+bootstrap/cache/*.php
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing/*
+storage/logs/*
+storage/app/public/*
+!storage/framework/cache/data/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!storage/framework/testing/.gitignore
+!storage/logs/.gitignore
+!storage/app/public/.gitignore
+
+public/hot
+public/build
+
+tests
+.phpunit.cache
+phpunit.xml
+
+*.md
+!DEPLOIEMENT.md

@@ -1,0 +1,43 @@
+# Host-level Nginx reverse proxy — installed OUTSIDE Docker, directly on
+# the VPS. This is what's actually exposed to the internet on 80/443; it
+# forwards everything to the Dockerized app, which only listens on
+# 127.0.0.1 (see docker-compose.prod.yml).
+#
+# Install: copy this file to /etc/nginx/sites-available/sanaga24, replace
+# every <CHANGE_ME_DOMAIN>, symlink it into sites-enabled, then run
+# `sudo certbot --nginx -d <domain> -d www.<domain>` — Certbot edits this
+# file in place to add the SSL certificate/listen directives and a
+# port-80-to-443 redirect. Full steps in DEPLOIEMENT.md.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name <CHANGE_ME_DOMAIN> www.<CHANGE_ME_DOMAIN>;
+
+    client_max_body_size 55M;
+
+    # Main app — proxied to the app container's loopback port.
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Reverb WebSocket connections (live comments/likes) — Laravel Reverb
+    # listens on /app/{key}; this needs the Upgrade/Connection headers
+    # that a plain proxy_pass above won't add on its own.
+    location /app/ {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400; # keep long-lived WebSocket connections open
+    }
+}
