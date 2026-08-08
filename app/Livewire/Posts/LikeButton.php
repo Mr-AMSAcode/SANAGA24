@@ -77,25 +77,37 @@ class LikeButton extends Component
 
         $user = auth()->user();
 
-        if ($this->liked) {
-            // Fetched then deleted on the instance (not a query-builder mass
-            // delete) so the Like model's deleted() hook fires and keeps
+        // Re-check against the database rather than trusting $this->liked:
+        // Livewire's optimistic UI lets a fast double-click fire two
+        // requests before the first one's response updates client state,
+        // so both could otherwise see "not liked" and both try to create,
+        // the second crashing on the unique constraint.
+        $existing = \App\Models\Like::where([
+            'user_id' => $user->id,
+            'target_type' => $this->targetType,
+            'target_id' => $this->targetId,
+        ])->first();
+
+        if ($existing) {
+            // Deleted on the instance (not a query-builder mass delete) so
+            // the Like model's deleted() hook fires and keeps
             // PostStats.like_count in sync.
-            \App\Models\Like::where([
-                'user_id' => $user->id,
-                'target_type' => $this->targetType,
-                'target_id' => $this->targetId,
-            ])->first()?->delete();
+            $existing->delete();
 
             $this->liked = false;
             $this->count = max(0, $this->count - 1);
         } else {
-            \App\Models\Like::create([
-                'user_id' => $user->id,
-                'target_type' => $this->targetType,
-                'target_id' => $this->targetId,
-                'created_at' => now(),
-            ]);
+            try {
+                \App\Models\Like::create([
+                    'user_id' => $user->id,
+                    'target_type' => $this->targetType,
+                    'target_id' => $this->targetId,
+                    'created_at' => now(),
+                ]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+                // A concurrent request (the double-click race above) already
+                // created it — the like still ends up active either way.
+            }
 
             $this->liked = true;
             $this->count++;

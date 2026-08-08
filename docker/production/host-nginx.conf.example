@@ -40,4 +40,19 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 86400; # keep long-lived WebSocket connections open
     }
+
+    # Reverb's server-side REST API (note: "apps", plural — different from
+    # /app/ above) — this is what PHP itself calls, from inside the app
+    # container, to actually trigger a broadcast (e.g. a new comment
+    # appearing live for other visitors). Without this, those requests
+    # fall through to location / and hit the main app instead of Reverb,
+    # which returns Laravel's own 404 page and makes every broadcast throw.
+    location /apps/ {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }

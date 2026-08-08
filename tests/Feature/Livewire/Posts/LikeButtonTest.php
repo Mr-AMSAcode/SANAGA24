@@ -132,14 +132,45 @@ describe('toggle()', function () {
     it('never lets the displayed count go negative', function () {
         $post = Post::factory()->published()->create();
         $user = User::factory()->asUser()->create();
+        // A real Like row so toggle() actually takes the delete branch —
+        // it now checks the database rather than trusting $this->liked,
+        // so a client-only "liked=true" with no backing row would instead
+        // hit the create branch, not the clamp this test exercises.
+        Like::factory()->create([
+            'user_id' => $user->id,
+            'target_type' => 'post',
+            'target_id' => $post->id,
+        ]);
 
         $component = Livewire::actingAs($user)->test(LikeButton::class, ['target' => $post]);
-        // Force an inconsistent starting state: liked=true but zero real likes.
-        $component->set('liked', true)->set('count', 0);
+        // Force a displayed count that's already out of sync (e.g. a stale
+        // page) — the clamp should still hold even though the underlying
+        // toggle correctly deletes the one real like.
+        $component->set('count', 0);
 
         $component->call('toggle');
 
         expect($component->get('count'))->toBe(0);
+    });
+
+    it('checks the database rather than a stale client liked flag when deciding to like or unlike', function () {
+        $post = Post::factory()->published()->create();
+        $user = User::factory()->asUser()->create();
+        // A real Like row already exists, but the component's own state
+        // (as if hydrated from an earlier, now-stale request) says false.
+        Like::factory()->create([
+            'user_id' => $user->id,
+            'target_type' => 'post',
+            'target_id' => $post->id,
+        ]);
+
+        $component = Livewire::actingAs($user)->test(LikeButton::class, ['target' => $post]);
+        $component->set('liked', false)->call('toggle');
+
+        // Must unlike (delete the real row) rather than attempt a second
+        // create and crash on the unique constraint.
+        expect(Like::where(['user_id' => $user->id, 'target_type' => 'post', 'target_id' => $post->id])->count())->toBe(0)
+            ->and($component->get('liked'))->toBeFalse();
     });
 });
 
